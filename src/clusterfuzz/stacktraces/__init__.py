@@ -416,6 +416,15 @@ class StackParser:
         if state.crash_type in IGNORE_CRASH_TYPES_FOR_ABRT_BREAKPOINT_AND_ILLS:
           continue
 
+      # Windows formats and surfaces ILL differently from Linux/Posix
+      # Update crash type for consistency.
+      self.update_state_on_match(
+            WINDOWS_SAN_ILL_REGEX,
+            line,
+            state,
+            new_type='Ill',
+            reset=False)
+
       # Assertions always come first, before the actual crash stacktrace.
       # However if we already have a kernel crash, we don't want to
       # replace it with the ASSERT.
