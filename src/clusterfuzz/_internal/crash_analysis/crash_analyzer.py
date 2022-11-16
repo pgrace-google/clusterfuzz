@@ -37,6 +37,7 @@ CRASH_TYPES_NON_SECURITY = [
   'Overwrites-const-input',
   'ASSERT_NOT_REACHED', # Unexpected conditions reached in the program.
   'Ill',
+  'Illegal-instruction',
   'Floating-point-exception',
   'RUNTIME_ASSERT', # RUNTIME_ASSERT in V8 (not a crash, but is a sign of an error
   'V8 correctness failure',
