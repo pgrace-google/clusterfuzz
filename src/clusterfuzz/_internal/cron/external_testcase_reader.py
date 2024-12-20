@@ -23,6 +23,22 @@ from appengine.libs import helpers
 from clusterfuzz._internal.issue_management.google_issue_tracker import \
     issue_tracker
 
+
+from googleapiclient.discovery import build
+from oauth2client import tools
+from oauth2client.file import Storage
+from oauth2client.client import AccessTokenRefreshError
+from oauth2client.client import OAuth2WebServerFlow
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
+import httplib2
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from clusterfuzz._internal.google_cloud_utils import credentials
+import google_auth_httplib2
+
+import csv
 ACCEPTED_FILETYPES = [
     'text/javascript', 'application/pdf', 'text/html', 'application/zip'
 ]
@@ -114,6 +130,63 @@ def submit_testcase(issue_id, file, filename, filetype, cmds):
       "https://clusterfuzz.com/upload-testcase/upload", data=data, timeout=10)
 
 
+def check_reporter_membership(reporter_email):
+#   # scope = 'https://www.googleapis.com/auth/admin.directory.group'
+  scope = 'https://www.googleapis.com/auth/admin.directory.group.readonly'
+  # credentials = ServiceAccountCredentials.from_json() ('246243303817.project.googleusercontent.com',
+  #                                                         'src/clusterfuzz/_internal/cron/cs.p12',
+  #                                                         scopes=scope)  
+  # credentials = Credentials.from_service_account_file('/tmp/sa-key', scopes=[scope])
+# credentials = credentials.create_delegated('admin@demoapp2.com')
+#   # credentials = SignedJwtAssertionCredentials('246243303817@project.googleusercontent.com', '246243303817.project.googleusercontent.com', '7Li-_L5vDvTm3wQ8QyCxuRp7', scope)
+  # http = httplib2.Http()
+  # http = credentials.authorize(http)
+  # service = build('admin', 'directory_v1', http=http)
+#   service = build('admin', 'directory_v1', credentials=credentials)
+#   # service = build('admin', 'directory_v1')
+#   request = service.members().list(groupKey='clusterfuzz-vrp-uploaders@chromium.org')
+#   response = request.execute()
+#   if response and 'members' in response:
+#       instances = response['members']
+#       for instance in instances:
+#           print(instance['email'])
+#   else:
+#       print
+#       'There are no members to list in this group.'
+
+  # upload_info = gcs.prepare_blob_upload()._asdict()
+  # data = {
+  #     'upload_key': upload_info['key'],
+  #     'key': upload_info['key'],
+  #     'GoogleAccessId': upload_info['google_access_id'],
+  #     'policy': upload_info['policy'],
+  #     'signature': upload_info['signature'],
+  # }
+  # v = requests.get('https://admin.googleapis.com/admin/directory/v1/groups/clusterfuzz-vrp-uploaders@chromium.org/hasMember/' + 'pgrace@google.com', data=data, timeout=10)
+  # print(v)
+
+  # credentials = service_account.Credentials.from_service_account_file (
+  #   '/tmp/sa-key',
+  #   scopes=['https://www.googleapis.com/auth/admin.directory.group.readonly',
+  #           'https://www.googleapis.com/auth/admin.directory.group.member.readonly']
+  # )# Delegated credentials for admin actions
+  # delegated_credentials = credentials.with_subject('pgrace@google.com')
+
+  # # Create the service client
+  # service = build('admin', 'directory_v1', credentials=delegated_credentials)
+  # request = service.members().list(groupKey='clusterfuzz-vrp-uploaders@chromium.org')
+  # response = request.execute()
+  # print(response)
+
+  creds = credentials.get_default(scopes=['https://www.googleapis.com/auth/admin.directory.group.member.readonly'])[0]
+  http = google_auth_httplib2.AuthorizedHttp(
+      creds, http=httplib2.Http(timeout=10))
+
+  service = build('admin', 'directory_v1', http=http, cache_discovery=False)
+  request = service.members().list(groupKey='clusterfuzz-vrp-uploaders@chromium.org')
+  response = request.execute()
+  print(response)
+
 def handle_testcases(tracker):
   """Fetches and submits testcases from bugs or closes unnecssary bugs."""
   # TODO(pgrace) replace once testing complete with
@@ -140,9 +213,10 @@ def handle_testcases(tracker):
 
 
 def main():
-  tracker = issue_tracker.IssueTracker('chromium', None,
-                                       {'default_component_id': 1363614})
-  handle_testcases(tracker)
+  # tracker = issue_tracker.IssueTracker('chromium', None,
+                                      #  {'default_component_id': 1363614})
+  # handle_testcases(tracker)
+  check_reporter_membership("pgrace@google.com")
 
 
 if __name__ == '__main__':
